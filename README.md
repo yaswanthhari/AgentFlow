@@ -58,5 +58,8 @@ celery -A celery_worker.celery_app worker --loglevel=info --pool=solo
 **Frontend:**
 Simply open `frontend/index.html` in your web browser! No local server is required for the frontend.
 
+## 🤝 Credits
+This project was co-created by **Yaswanth Hari** and **Antigravity** (an advanced agentic coding assistant developed by the Google DeepMind team). 
+
 ---
 *Built as a scalable AI infrastructure prototype.*
