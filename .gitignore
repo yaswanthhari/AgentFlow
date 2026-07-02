@@ -1,0 +1,17 @@
+# Environments
+venv/
+env/
+.env
+
+# Python caches
+__pycache__/
+*.pyc
+
+# Database
+*.db
+
+# Celery local broker files
+broker/
+
+# Logs
+*.log
