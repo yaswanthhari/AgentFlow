@@ -112,9 +112,12 @@ function renderTasks() {
         
         let resultHtml = '';
         if (task.result) {
+            const parsedMarkdown = marked.parse(task.result);
             resultHtml = `
-                <div class="mt-4 p-4 rounded-lg bg-slate-900/80 border border-emerald-500/20 shadow-inner">
-                    <p class="text-emerald-400 text-sm font-mono leading-relaxed">${task.result}</p>
+                <div class="mt-4 p-4 rounded-lg bg-slate-900/80 border border-emerald-500/20 shadow-inner max-h-[400px] overflow-y-auto">
+                    <div class="prose prose-invert prose-emerald max-w-none text-sm">
+                        ${parsedMarkdown}
+                    </div>
                 </div>
             `;
         }
