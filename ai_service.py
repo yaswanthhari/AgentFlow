@@ -31,10 +31,24 @@ def process_ai_task(task_id: int):
             real_response = "Error: GEMINI_API_KEY is not configured on Render. Please add it to your Environment Variables!"
         else:
             try:
+                from google.genai import types
                 client = genai.Client(api_key=api_key)
+                
+                # We inject a powerful system prompt to make it behave like a premium AI assistant
+                sys_prompt = (
+                    "You are an elite, highly advanced AI assistant. Always provide extremely detailed, "
+                    "comprehensive, and well-structured answers. Use professional formatting, clear markdown, "
+                    "bullet points, bold text for emphasis, and code blocks where applicable. Ensure your "
+                    "responses rival the quality of premium chatbots."
+                )
+                
                 response = client.models.generate_content(
                     model='gemini-2.5-flash',
-                    contents=db_task.prompt
+                    contents=db_task.prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=sys_prompt,
+                        temperature=0.7, # Adds a bit of creativity to make responses less robotic
+                    )
                 )
                 real_response = response.text
             except Exception as ai_e:
