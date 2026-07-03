@@ -1,9 +1,9 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 import models
 from database import engine, get_db
-from celery_worker import process_ai_task
+from ai_service import process_ai_task
 from fastapi.staticfiles import StaticFiles
 import os
 
@@ -67,16 +67,15 @@ def create_workflow(workflow: WorkflowCreate, db: Session = Depends(get_db)):
     return db_workflow
 
 @app.post("/tasks/")
-def create_task(task: TaskCreate, db: Session = Depends(get_db)):
+def create_task(task: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     # 1. Save the initial task to the database with PENDING status
     db_task = models.Task(prompt=task.prompt, workflow_id=task.workflow_id)
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
     
-    # 2. Trigger the Celery background worker
-    # .delay() is the Celery method to push a task to the queue asynchronously
-    process_ai_task.delay(db_task.id)
+    # 2. Trigger the native FastAPI background task
+    background_tasks.add_task(process_ai_task, db_task.id)
     
     return {"message": "Task queued successfully", "task_id": db_task.id, "status": "PENDING"}
 
