@@ -29,6 +29,7 @@ class Task(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     prompt = Column(String)
+    persona = Column(String, default="general") # Which AI persona to use
     status = Column(String, default="PENDING") # PENDING, PROCESSING, COMPLETED, FAILED
     result = Column(String, nullable=True)
     workflow_id = Column(Integer, ForeignKey("workflows.id"))

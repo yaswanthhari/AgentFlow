@@ -34,20 +34,38 @@ def process_ai_task(task_id: int):
                 from google.genai import types
                 client = genai.Client(api_key=api_key)
                 
-                # We inject a powerful system prompt to make it behave like a premium AI assistant
-                sys_prompt = (
-                    "You are an elite, highly advanced AI assistant. Always provide extremely detailed, "
-                    "comprehensive, and well-structured answers. Use professional formatting, clear markdown, "
-                    "bullet points, bold text for emphasis, and code blocks where applicable. Ensure your "
-                    "responses rival the quality of premium chatbots."
-                )
+                # Persona Logic
+                sys_prompt = "You are a helpful AI assistant."
+                
+                if db_task.persona == "code_sensei":
+                    sys_prompt = (
+                        "You are Code Sensei, an elite software engineering mentor. "
+                        "When given code, explain what it does, reformat it perfectly, "
+                        "and add helpful comments. If the user asks a coding question, "
+                        "provide a deep, technical explanation with clean code blocks. "
+                        "Use markdown, bullet points, and highlight best practices."
+                    )
+                elif db_task.persona == "resume_roaster":
+                    sys_prompt = (
+                        "You are the Resume Roaster, a brutally honest but extremely helpful "
+                        "Silicon Valley hiring manager. Your job is to critique the user's "
+                        "resume or experience. Point out flaws, suggest powerful action verbs, "
+                        "and format your feedback with clear markdown headings, bullet points, "
+                        "and a 'Final Verdict'. Don't hold back, but be constructive."
+                    )
+                else:
+                    sys_prompt = (
+                        "You are an elite, highly advanced AI assistant. Always provide extremely detailed, "
+                        "comprehensive, and well-structured answers. Use professional formatting, clear markdown, "
+                        "bullet points, bold text for emphasis, and code blocks where applicable."
+                    )
                 
                 response = client.models.generate_content(
                     model='gemini-2.5-flash',
                     contents=db_task.prompt,
                     config=types.GenerateContentConfig(
                         system_instruction=sys_prompt,
-                        temperature=0.7, # Adds a bit of creativity to make responses less robotic
+                        temperature=0.7, 
                     )
                 )
                 real_response = response.text

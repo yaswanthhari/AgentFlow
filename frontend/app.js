@@ -6,6 +6,8 @@ async function submitTask() {
     const prompt = promptInput.value.trim();
     if (!prompt) return;
 
+    const persona = document.getElementById('persona').value;
+
     // Change button state
     const btn = document.getElementById('submitBtn');
     const originalText = btn.innerHTML;
@@ -17,12 +19,12 @@ async function submitTask() {
         const response = await fetch(`${API_URL}/tasks/`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt: prompt, workflow_id: 1 })
+            body: JSON.stringify({ prompt: prompt, persona: persona, workflow_id: 1 })
         });
         
         const data = await response.json();
         
-        activeTasks.unshift({ id: data.task_id, prompt: prompt, status: 'PENDING', result: null });
+        activeTasks.unshift({ id: data.task_id, prompt: prompt, persona: persona, status: 'PENDING', result: null });
         promptInput.value = '';
         renderTasks();
         
@@ -124,7 +126,7 @@ function renderTasks() {
         
         item.innerHTML = `
             <div class="flex justify-between items-center mb-3">
-                <span class="text-xs font-bold text-slate-400 tracking-wider uppercase">Task ID #${task.id}</span>
+                <span class="text-xs font-bold text-slate-400 tracking-wider uppercase">Task ID #${task.id} <span class="ml-2 text-brand-purple">${task.persona || 'general'}</span></span>
                 <span class="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${config.color} ${config.bg}">
                     ${config.icon}
                     ${task.status}
@@ -136,3 +138,26 @@ function renderTasks() {
         taskList.appendChild(item);
     });
 }
+
+// Load task history on page load
+async function loadHistory() {
+    try {
+        const response = await fetch(`${API_URL}/tasks/`);
+        const data = await response.json();
+        if (data && data.length > 0) {
+            activeTasks = data.map(t => ({ id: t.task_id, prompt: t.prompt, persona: t.persona, status: t.status, result: t.result }));
+            renderTasks();
+            // Start polling any pending tasks loaded from history
+            activeTasks.forEach(task => {
+                if (task.status === 'PENDING' || task.status === 'PROCESSING') {
+                    pollTaskStatus(task.id);
+                }
+            });
+        }
+    } catch (e) {
+        console.error("Failed to load history:", e);
+    }
+}
+
+// Initialize
+ensureUserAndWorkflowExist().then(() => loadHistory());

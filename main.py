@@ -39,6 +39,7 @@ class WorkflowCreate(BaseModel):
 
 class TaskCreate(BaseModel):
     prompt: str
+    persona: str = "general"
     workflow_id: int
 
 # --- API Endpoints ---
@@ -69,7 +70,7 @@ def create_workflow(workflow: WorkflowCreate, db: Session = Depends(get_db)):
 @app.post("/tasks/")
 def create_task(task: TaskCreate, background_tasks: BackgroundTasks, db: Session = Depends(get_db)):
     # 1. Save the initial task to the database with PENDING status
-    db_task = models.Task(prompt=task.prompt, workflow_id=task.workflow_id)
+    db_task = models.Task(prompt=task.prompt, persona=task.persona, workflow_id=task.workflow_id)
     db.add(db_task)
     db.commit()
     db.refresh(db_task)
@@ -79,9 +80,14 @@ def create_task(task: TaskCreate, background_tasks: BackgroundTasks, db: Session
     
     return {"message": "Task queued successfully", "task_id": db_task.id, "status": "PENDING"}
 
+@app.get("/tasks/")
+def get_all_tasks(db: Session = Depends(get_db)):
+    tasks = db.query(models.Task).order_by(models.Task.id.desc()).all()
+    return [{"task_id": t.id, "prompt": t.prompt, "persona": t.persona, "status": t.status, "result": t.result} for t in tasks]
+
 @app.get("/tasks/{task_id}")
 def get_task_status(task_id: int, db: Session = Depends(get_db)):
     task = db.query(models.Task).filter(models.Task.id == task_id).first()
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-    return {"task_id": task.id, "status": task.status, "result": task.result}
+    return {"task_id": task.id, "prompt": task.prompt, "persona": task.persona, "status": task.status, "result": task.result}
