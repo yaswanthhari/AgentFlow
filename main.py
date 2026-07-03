@@ -4,6 +4,8 @@ from pydantic import BaseModel
 import models
 from database import engine, get_db
 from celery_worker import process_ai_task
+from fastapi.staticfiles import StaticFiles
+import os
 
 # Create all database tables
 models.Base.metadata.create_all(bind=engine)
@@ -11,6 +13,11 @@ models.Base.metadata.create_all(bind=engine)
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="AgentFlow API", description="AI-Powered Agentic Workflow Engine")
+
+# Mount the frontend directory to serve static files
+frontend_path = os.path.join(os.path.dirname(__file__), "frontend")
+if os.path.exists(frontend_path):
+    app.mount("/dashboard", StaticFiles(directory=frontend_path, html=True), name="frontend")
 
 # Allow frontend to communicate with backend
 app.add_middleware(
