@@ -12,21 +12,27 @@ load_dotenv()
 api_key = os.getenv("GEMINI_API_KEY")
 # Configuration is handled per client instance in the new SDK.
 
-# We will use the local file system instead of Redis since Docker is not responding
-os.makedirs('./broker/out', exist_ok=True)
-os.makedirs('./broker/processed', exist_ok=True)
+# Check if we are in production (Render) by looking for the Redis URL
+redis_url = os.getenv("CELERY_BROKER_URL")
 
-celery_app = Celery("agentflow_worker")
+if redis_url:
+    # Production: Use Redis
+    celery_app = Celery("agentflow_worker", broker=redis_url, backend="sqlite:///celery_results.db")
+else:
+    # Local: Use file system
+    os.makedirs('./broker/out', exist_ok=True)
+    os.makedirs('./broker/processed', exist_ok=True)
+    
+    celery_app = Celery("agentflow_worker", broker="filesystem://localhost//", backend="sqlite:///celery_results.db")
+    celery_app.conf.update(
+        broker_transport_options={
+            'data_folder_in': './broker/out',
+            'data_folder_out': './broker/out',
+            'data_folder_processed': './broker/processed'
+        }
+    )
 
 celery_app.conf.update(
-    broker_url='filesystem://',
-    broker_transport_options={
-        'data_folder_in': './broker/out',
-        'data_folder_out': './broker/out',
-        'data_folder_processed': './broker/processed'
-    },
-    # We use SQLite via SQLAlchemy to store the results instead of Redis
-    result_backend='db+sqlite:///celery_results.db',
     task_serializer="json",
     accept_content=["json"],
     result_serializer="json",
